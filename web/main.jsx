@@ -144,8 +144,8 @@ function App() {
     return () => window.removeEventListener("keydown", closeOnEscape);
   }, [analysisItem]);
 
-  const load = async () => {
-    setLoading(true);
+  const load = async ({ silent = false } = {}) => {
+    if (!silent) setLoading(true);
     try {
       const [lots, candidates, sources, ai] = await Promise.all([api("/api/lots"), api("/api/candidates"), api("/api/sources"), api("/api/ai/status")]);
       setData({ lots: lots.items, candidates: candidates.items, sources: sources.items, ai });
@@ -153,9 +153,14 @@ function App() {
       setCriteria(ai.criteria || "");
       setMessage(`Sincronizado agora · ${sources.items.find((s) => s.key === sources.selected)?.name || "nenhum site selecionado"}`);
     } catch (error) { setMessage(error.message); }
-    finally { setLoading(false); }
+    finally { if (!silent) setLoading(false); }
   };
   useEffect(() => { load(); }, []);
+  useEffect(() => {
+    if (tab !== "lots") return undefined;
+    const interval = window.setInterval(() => load({ silent: true }), 5000);
+    return () => window.clearInterval(interval);
+  }, [tab]);
 
   const source = data.sources.find((item) => item.key === selectedSource);
   const brands = useMemo(() => [...new Set(data.lots.map((item) => brandFromTitle(item.title)).filter(Boolean))].sort((a, b) => a.localeCompare(b, "pt-BR")), [data.lots]);
@@ -204,3 +209,4 @@ function App() {
 }
 
 createRoot(document.getElementById("root")).render(<App />);
+

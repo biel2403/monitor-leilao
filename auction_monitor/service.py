@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 from auction_monitor.config import Settings
 from auction_monitor.database import Database
@@ -67,24 +68,36 @@ class MonitorService:
                     stats["updated_lots"] += 1
                 staged_lots.append((raw, lot_id))
 
-            # Persist the complete listing before the slower detail requests so the catalog
-            # becomes visible immediately while fee and condition data is enriched afterward.
+            # The list page has the basic lot data, but the final cost and condition live
+            # on each detail page. Fetch those pages concurrently so a fresh catalog does
+            # not spend several minutes enriching one announcement at a time.
+            detail_queue = [
+                (raw, lot_id)
+                for raw, lot_id in staged_lots
+                if scraper.source_name == "Freitas Leiloeiro" and not self.db.get_lot_detail(lot_id)
+            ]
+            if detail_queue:
+                worker_count = min(8, len(detail_queue))
+                with ThreadPoolExecutor(max_workers=worker_count, thread_name_prefix="lot-detail") as executor:
+                    futures = {executor.submit(scraper.fetch_detail, raw.url): (raw, lot_id) for raw, lot_id in detail_queue}
+                    for future in as_completed(futures):
+                        raw, lot_id = futures[future]
+                        try:
+                            info = future.result()
+                            self.db.save_lot_detail(
+                                lot_id,
+                                str(info["classification"] or ""),
+                                float(info["commission_percent"] or 0),
+                                float(info["fixed_fees"] or 0),
+                                str(info["condition_text"] or ""),
+                                list(info["image_urls"] or []),
+                                info["notice_url"],
+                            )
+                            stats["details_checked"] += 1
+                        except Exception as exc:
+                            logger.warning("Nao foi possivel consultar detalhes do lote %s: %s", lot_id, exc)
+
             for raw, lot_id in staged_lots:
-                if scraper.source_name == "Freitas Leiloeiro" and not self.db.get_lot_detail(lot_id):
-                    try:
-                        info = scraper.fetch_detail(raw.url)
-                        self.db.save_lot_detail(
-                            lot_id,
-                            str(info["classification"] or ""),
-                            float(info["commission_percent"] or 0),
-                            float(info["fixed_fees"] or 0),
-                            str(info["condition_text"] or ""),
-                            list(info["image_urls"] or []),
-                            info["notice_url"],
-                        )
-                        stats["details_checked"] += 1
-                    except Exception as exc:
-                        logger.warning("Nao foi possivel consultar detalhes do lote %s: %s", lot_id, exc)
                 opportunities, notifications = self._analyze_lot(lot_id)
                 stats["opportunities"] += opportunities
                 stats["notifications"] += notifications
@@ -112,3 +125,4 @@ class MonitorService:
             message = format_opportunity_message(opportunity, lot, filter_row["name"])
             notifications += dispatch_notifications(self.db, opportunity_id, filter_row.get("channels") or [], message, self.notifiers)
         return count, notifications
+
