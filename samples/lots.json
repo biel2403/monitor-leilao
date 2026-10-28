@@ -1,0 +1,26 @@
+[
+  {
+    "title": "Volkswagen Gol 1.6 2019",
+    "description": "Exemplo local para validar o fluxo do sistema.",
+    "category": "veiculos",
+    "brand": "Volkswagen",
+    "model": "Gol",
+    "year": 2019,
+    "mileage": 68000,
+    "city": "Sorocaba",
+    "state": "SP",
+    "initial_value": 22000,
+    "current_bid": 24800,
+    "bid_count": 3,
+    "opens_at": "2026-09-24T09:00:00-03:00",
+    "closes_at": "2026-09-25T14:30:00-03:00",
+    "url": "https://exemplo.local/leiloes/lote-gol-2019",
+    "external_id": "fixture-gol-2019",
+    "images": [],
+    "documentation": "Documento informado na fonte de exemplo.",
+    "auctioneer": "Fixture local",
+    "source_site": "fixture-local",
+    "reference_value": 50000
+  }
+]
+

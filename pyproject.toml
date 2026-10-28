@@ -1,0 +1,11 @@
+[project]
+name = "auction-monitor"
+version = "0.1.0"
+description = "Sistema independente para monitoramento de leiloes online."
+requires-python = ">=3.11"
+dependencies = []
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]
+

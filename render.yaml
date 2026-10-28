@@ -1,0 +1,25 @@
+services:
+  - type: web
+    name: monitor-leiloes
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /api/health
+    envVars:
+      - key: APP_HOST
+        value: 0.0.0.0
+      - key: APP_PORT
+        value: 8080
+      - key: DATABASE_PATH
+        value: /app/data/auction_monitor.sqlite3
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: GEMINI_MODEL
+        value: gemini-3.8-flash
+      - key: REEF_API_KEY
+        sync: false
+      - key: FIPE_API_TOKEN
+        sync: false
+      - key: AI_DAILY_LIMIT
+        value: 10
+      - key: MARKET_DAILY_LIMIT
+        value: 20

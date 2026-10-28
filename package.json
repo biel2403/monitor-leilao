@@ -1,0 +1,28 @@
+{
+  "name": "leilao",
+  "version": "1.0.0",
+  "description": "Sistema independente para monitorar leiloes online, normalizar lotes, manter historico, aplicar filtros e enviar notificacoes por Telegram e e-mail.",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs",
+    "test": "tests"
+  },
+  "scripts": {
+    "dev": "vite --host 127.0.0.1",
+    "build": "vite build",
+    "preview": "vite preview --host 127.0.0.1",
+    "test": "echo \"No frontend tests configured\""
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "dependencies": {
+    "framer-motion": "^14.7.1",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1"
+  },
+  "devDependencies": {
+    "vite": "^8.3.5"
+  }
+}
