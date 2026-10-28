@@ -4,6 +4,7 @@ import logging
 
 from auction_monitor.config import Settings
 from auction_monitor.database import Database
+from auction_monitor.models import RawLot
 from auction_monitor.notifications import build_notifiers, dispatch_notifications, format_opportunity_message
 from auction_monitor.opportunities import analyze_lot
 from auction_monitor.scrapers import AuctionScraper, FixtureScraper
@@ -56,6 +57,7 @@ class MonitorService:
                 stats["source_errors"].append(f"{scraper.source_name}: {exc}")
                 logger.exception("Erro no scraper %s: %s", scraper.source_name, exc)
                 continue
+            staged_lots: list[tuple[RawLot, int]] = []
             for raw in raw_lots:
                 stats["lots_seen"] += 1
                 lot_id, created, changes = self.db.upsert_lot(raw)
@@ -63,6 +65,11 @@ class MonitorService:
                     stats["new_lots"] += 1
                 elif changes:
                     stats["updated_lots"] += 1
+                staged_lots.append((raw, lot_id))
+
+            # Persist the complete listing before the slower detail requests so the catalog
+            # becomes visible immediately while fee and condition data is enriched afterward.
+            for raw, lot_id in staged_lots:
                 if scraper.source_name == "Freitas Leiloeiro" and not self.db.get_lot_detail(lot_id):
                     try:
                         info = scraper.fetch_detail(raw.url)
