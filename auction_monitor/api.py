@@ -139,6 +139,14 @@ class ApiServer:
             }
 
         class Handler(BaseHTTPRequestHandler):
+            def do_HEAD(self) -> None:
+                path = urlparse(self.path).path
+                if path in {"/", "/api/health"}:
+                    self.send_response(HTTPStatus.OK)
+                    self.end_headers()
+                    return
+                self.send_error(HTTPStatus.NOT_FOUND)
+
             def do_GET(self) -> None:
                 path = urlparse(self.path).path
                 if path == "/":
